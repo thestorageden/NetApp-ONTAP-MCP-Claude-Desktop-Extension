@@ -1,0 +1,105 @@
+{
+  "manifest_version": "0.3",
+  "name": "ontap-mcp",
+  "display_name": "NetApp ONTAP MCP",
+  "version": "1.0.4",
+  "description": "Manage NetApp ONTAP storage clusters from Claude — provision volumes, configure NFS/CIFS, manage snapshots, and more.",
+  "long_description": "Runs NetApp's official open-source ONTAP-MCP server (https://github.com/NetApp/ontap-mcp) locally in Docker and bridges it to Claude Desktop.\n\nONTAP-MCP only speaks Streamable HTTP, not the local stdio protocol Desktop Extensions normally use, so this extension does three things on startup:\n\n1. Writes an `ontap.yaml` credentials file from the settings below into `~/.ontap-mcp-desktop-extension/`.\n2. Starts (or restarts) the `ghcr.io/netapp/ontap-mcp` Docker container, publishing it only to `127.0.0.1` on your machine.\n3. Bridges Claude Desktop's stdio connection to that local HTTP server using `mcp-remote`.\n\n**Requirements:** Docker Desktop (or another Docker engine) must be installed and running. Nothing is exposed outside your own machine — the container's port is bound to localhost only.\n\n**Security note:** ONTAP-MCP itself has no built-in authentication unless you configure OAuth separately (not covered by this extension). Anything with access to the assistant using this extension can read and, unless Read-Only Mode is left on, modify your ONTAP clusters. Read-Only Mode is on by default.",
+  "author": {
+    "name": "Matt",
+    "email": "matt@thestorageden.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NetApp/ontap-mcp.git"
+  },
+  "homepage": "https://netapp.github.io/ontap-mcp/latest/",
+  "documentation": "https://netapp.github.io/ontap-mcp/latest/",
+  "support": "https://github.com/NetApp/ontap-mcp/issues",
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.js"],
+      "env": {
+        "ONTAP_ADDRESS": "${user_config.ontap_address}",
+        "ONTAP_USERNAME": "${user_config.ontap_username}",
+        "ONTAP_PASSWORD": "${user_config.ontap_password}",
+        "ONTAP_INSECURE_TLS": "${user_config.ontap_insecure_tls}",
+        "ONTAP_READ_ONLY": "${user_config.read_only}",
+        "ONTAP_MCP_DOCKER_IMAGE": "${user_config.docker_image}",
+        "ONTAP_MCP_LOCAL_PORT": "${user_config.local_port}",
+        "ONTAP_MCP_ADDITIONAL_POLLERS_YAML": "${user_config.additional_pollers_yaml}"
+      }
+    }
+  },
+  "keywords": ["netapp", "ontap", "storage", "infrastructure", "docker"],
+  "license": "MIT",
+  "privacy_policies": ["https://www.netapp.com/us/company/trust-center/index.aspx"],
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  },
+  "user_config": {
+    "ontap_address": {
+      "type": "string",
+      "title": "ONTAP Cluster Address",
+      "description": "Hostname or IP address of your ONTAP cluster management LIF (e.g. 10.193.48.11)",
+      "required": true
+    },
+    "ontap_username": {
+      "type": "string",
+      "title": "ONTAP Username",
+      "description": "Username used to authenticate to the ONTAP cluster",
+      "default": "admin",
+      "required": true
+    },
+    "ontap_password": {
+      "type": "string",
+      "title": "ONTAP Password",
+      "description": "Password for the ONTAP username above. Stored locally by Claude Desktop and written only to a config file on your own machine, mounted read-only into the local Docker container.",
+      "sensitive": true,
+      "required": true
+    },
+    "ontap_insecure_tls": {
+      "type": "boolean",
+      "title": "Skip TLS Certificate Verification",
+      "description": "Enable if your cluster uses a self-signed certificate, which is common for on-prem clusters. Disable to require a valid, trusted certificate.",
+      "default": true,
+      "required": false
+    },
+    "read_only": {
+      "type": "boolean",
+      "title": "Read-Only Mode (recommended)",
+      "description": "When enabled, only read/list tools are registered — nothing can be created, modified, or deleted on your ONTAP clusters. Turn off only if you want the assistant to make changes.",
+      "default": true,
+      "required": false
+    },
+    "docker_image": {
+      "type": "string",
+      "title": "Docker Image",
+      "description": "ONTAP-MCP container image and tag to run",
+      "default": "ghcr.io/netapp/ontap-mcp:latest",
+      "required": false
+    },
+    "local_port": {
+      "type": "number",
+      "title": "Local Port",
+      "description": "Local port used to publish the ONTAP-MCP container on 127.0.0.1. Change this if the default is already in use on your machine.",
+      "default": 8083,
+      "min": 1024,
+      "max": 65535,
+      "required": false
+    },
+    "additional_pollers_yaml": {
+      "type": "string",
+      "title": "Additional Clusters (advanced, YAML)",
+      "description": "Optional. To manage more than one cluster, add extra Pollers entries here in ontap.yaml format, indented as if nested one level under \"Pollers:\". Example:\ncluster2:\n  addr: 10.0.0.2\n  username: admin\n  password: secret\n  use_insecure_tls: true",
+      "required": false
+    }
+  }
+}

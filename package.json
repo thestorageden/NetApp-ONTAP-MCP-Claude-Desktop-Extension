@@ -1,0 +1,14 @@
+{
+  "name": "ontap-mcp-desktop-extension",
+  "version": "1.0.4",
+  "private": true,
+  "description": "Desktop Extension wrapper that runs NetApp's ONTAP-MCP server in Docker and bridges it to Claude Desktop over stdio.",
+  "main": "server/index.js",
+  "author": {
+    "name": "Matt",
+    "email": "matt@thestorageden.com"
+  },
+  "dependencies": {
+    "mcp-remote": "0.8.3"
+  }
+}
